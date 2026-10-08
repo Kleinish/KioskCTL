@@ -776,10 +776,8 @@ async fn generic_delete(
 fn merge_object(target: &mut Value, patch: Value) {
     if let (Value::Object(a), Value::Object(b)) = (target, patch) {
         for (k, v) in b {
-            if k.ends_with("password") || k.ends_with("api_key") {
-                if v.as_str() == Some("") {
-                    continue;
-                }
+            if (k.ends_with("password") || k.ends_with("api_key")) && v.as_str() == Some("") {
+                continue;
             }
             a.insert(k, v);
         }
