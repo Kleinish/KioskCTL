@@ -1,0 +1,98 @@
+version: 12
+device:
+  name: Test Kiosk
+browser:
+  url: https://example.com
+  provider: auto
+  executable: auto
+  user_data_dir: auto
+  incognito: false
+  devtools_port: 9222
+  extra_args: []
+  pages: []
+  zoom: 1.0
+  color_scheme: auto
+  touch_ui:
+    pull_to_refresh: true
+    pull_threshold_px: 110
+    edge_drawer: false
+    onscreen_keyboard: false
+  prompts:
+    password_manager: false
+    notifications: block
+    translate: false
+    autofill: false
+# Leave command empty for the normal Chromium kiosk.  Set it to an absolute
+# executable path to run a native/local graphical application inside Cage.
+launcher:
+  command: ''
+  args: []
+  working_directory: ''
+  environment: {}
+admin:
+  host: 0.0.0.0
+  port: 2324
+  auth:
+    enabled: true
+    token: CHANGE_ME
+system:
+  kiosk_user: kioskctl
+  session_service: getty@tty1.service
+  tty: tty1
+  runtime_dir: auto
+  wayland_display: auto
+  allow_power_actions: true
+  enabled_marker: /etc/kioskctl/kiosk.enabled
+display:
+  output: auto
+  mode: preferred
+  refresh_hz: auto
+  scale: 1.0
+  transform: normal
+  settle_timeout: 12.0
+  settle_delay: 1.0
+  reinitialize_on_start: true
+  brightness_backend: auto
+input:
+  rotate_touch_with_display: true
+  ignore_touch_mouse_emulation: true
+  disable_touchpad_in_kiosk: false
+audio:
+  provider: auto
+temperature:
+  primary: auto
+monitoring:
+  thresholds:
+    cpu_percent: 90
+    memory_percent: 90
+    disk_percent: 90
+    temperature_c: 80
+idle:
+  enabled: false
+  dim_after_seconds: 300
+  off_after_seconds: 600
+  dim_brightness: 20
+  wake_on_input: true
+screensaver:
+  enabled: false
+  after_seconds: 120
+  interval_seconds: 10
+  fit: contain
+  shuffle: false
+  background: "#000000"
+  keep_display_on: true
+  image_dir: /var/lib/kioskctl/screensaver
+mqtt:
+  enabled: false
+  host: 127.0.0.1
+  port: 1883
+  username: ''
+  password: ''
+  base_topic: kioskctl
+plugins:
+  directory: /etc/kioskctl/plugins.d
+  homeassistant:
+    enabled: false
+    discovery_prefix: homeassistant
+update:
+  command: ''

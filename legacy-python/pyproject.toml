@@ -1,0 +1,25 @@
+[project]
+name = "kioskctl"
+version = "0.5.2"
+description = "Distro-agnostic Linux kiosk agent with browser-based remote management"
+requires-python = ">=3.10"
+dependencies = [
+  "fastapi>=0.115,<1",
+  "uvicorn>=0.30,<1",
+  "PyYAML>=6,<7",
+  "paho-mqtt>=2,<3",
+  "websocket-client>=1.8,<2",
+]
+
+[project.scripts]
+kioskctl = "kioskctl.cli:main"
+
+[build-system]
+requires = ["setuptools>=70"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["kioskctl*"]
+
+[tool.setuptools.package-data]
+kioskctl = ["static/*"]

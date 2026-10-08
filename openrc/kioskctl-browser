@@ -1,0 +1,23 @@
+#!/sbin/openrc-run
+name="kioskctl browser"
+description="Cage + Chromium kiosk session on VT7"
+command="/usr/local/bin/kioskctl-openrc-session"
+supervisor="supervise-daemon"
+respawn_delay=3
+respawn_max=5
+respawn_period=60
+output_log="/var/log/kioskctl-browser.log"
+error_log="/var/log/kioskctl-browser.log"
+
+start_pre() {
+  local uid gid
+  uid="$(id -u kioskctl)"
+  gid="$(id -g kioskctl)"
+  checkpath --directory --owner "${uid}:${gid}" --mode 0700 /run/kioskctl-user
+  checkpath --file --owner root:root --mode 0644 /var/log/kioskctl-browser.log
+}
+
+depend() {
+  need net seatd
+  after dbus
+}

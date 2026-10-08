@@ -1,0 +1,8 @@
+id: hello-python
+name: Hello Python plugin
+version: 1.0.0
+description: Minimal Python kioskctl protocol example
+executable: hello-plugin
+capabilities: [status.provider]
+permissions: [status.read]
+config_schema: []

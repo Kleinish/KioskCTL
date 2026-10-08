@@ -1,0 +1,10 @@
+#!/sbin/openrc-run
+name="kioskctl agent"
+description="kioskctl remote management agent"
+command="/usr/local/bin/kioskctl"
+command_args="--config /etc/kioskctl/config.yaml serve"
+command_background="yes"
+pidfile="/run/kioskctl-agent.pid"
+output_log="/var/log/kioskctl-agent.log"
+error_log="/var/log/kioskctl-agent.log"
+depend() { need net; after firewall; }

@@ -1,0 +1,6 @@
+#!/bin/sh
+set -eu
+# Alpine/OpenRC keeps tty1 as the administrator console and starts the kiosk on
+# VT7. The explicit -- keeps su's options from ever being interpreted by openvt.
+exec openvt -c 7 -s -w -- su -s /bin/sh kioskctl -c \
+  'XDG_RUNTIME_DIR=/run/kioskctl-user LIBSEAT_BACKEND=seatd KIOSKCTL_CONFIG=/etc/kioskctl/config.yaml /usr/local/bin/kioskctl-session'

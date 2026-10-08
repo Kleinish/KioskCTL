@@ -1,0 +1,4 @@
+# Managed by kioskctl. This profile belongs only to the dedicated kioskctl user.
+if [ "$(tty 2>/dev/null)" = "/dev/tty1" ] && [ -z "${SSH_CONNECTION:-}" ]; then
+    exec /usr/local/bin/kioskctl-session
+fi

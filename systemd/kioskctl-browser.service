@@ -1,0 +1,17 @@
+[Unit]
+Description=kioskctl graphical browser session
+After=kioskctl-agent.service seatd.service
+Wants=seatd.service
+
+[Service]
+User=kioskctl
+RuntimeDirectory=kioskctl-user
+RuntimeDirectoryMode=0700
+Environment=XDG_RUNTIME_DIR=/run/kioskctl-user
+Environment=LIBSEAT_BACKEND=seatd
+Environment=KIOSKCTL_CONFIG=/etc/kioskctl/config.yaml
+ExecStart=/bin/sh /opt/kioskctl/scripts/kioskctl-session
+Restart=on-failure
+
+[Install]
+WantedBy=graphical.target

@@ -1,0 +1,27 @@
+#!/usr/bin/env python3
+import json
+import sys
+
+
+def reply(request_id, result=None, error=None):
+    response = {"jsonrpc": "2.0", "id": request_id}
+    if error is None:
+        response["result"] = result
+    else:
+        response["error"] = error
+    print(json.dumps(response), flush=True)
+
+
+try:
+    request = json.loads(sys.stdin.readline())
+except json.JSONDecodeError as exc:
+    reply(None, error={"code": -32700, "message": str(exc)})
+    raise SystemExit(0)
+
+request_id = request.get("id")
+if request.get("protocol") != 1:
+    reply(request_id, error={"code": -32600, "message": "unsupported protocol"})
+elif request.get("method") == "status":
+    reply(request_id, result={"healthy": True, "message": "hello from Python"})
+else:
+    reply(request_id, error={"code": -32601, "message": "method not found"})

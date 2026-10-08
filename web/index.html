@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>kioskctl</title>
+  <script>try{const t=localStorage.getItem('kioskctl_theme')||((window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches)?'light':'dark');document.documentElement.dataset.theme=t;}catch(_){}</script>
+  <link rel="stylesheet" href="/static/style.css?v=0.6.0-wip5" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark">K</div>
+        <div><h1>kioskctl</h1><span class="version" id="appVersion">v0.6.0</span></div>
+      </div>
+      <nav id="sideNav" class="side-nav hidden">
+        <button class="nav-item active" data-view-target="dashboard"><span>▣</span>Dashboard</button>
+        <button class="nav-item" data-view-target="settings"><span>⚙</span>Settings</button>
+        <button class="nav-item" data-view-target="system"><span>▤</span>System</button>
+      </nav>
+      <div class="sidebar-footer"><button id="themeToggle" class="theme-toggle secondary" type="button" aria-label="Toggle kioskctl admin light and dark mode">☀ Light mode</button><div class="status-pill" id="online">Checking…</div></div>
+    </aside>
+
+    <div class="app-main">
+      <header>
+        <button id="menuToggle" class="menu-toggle secondary" aria-label="Open menu">☰</button>
+        <div class="header-title"><h2 id="pageTitle">Dashboard</h2><p id="subtitle">Linux kiosk control</p></div>
+        <div class="header-health hidden" id="healthIndicators" aria-label="Kiosk health indicators"></div>
+        <div class="header-power hidden" id="dashboardPower"><button data-action="system/reboot" data-confirm="Reboot this kiosk?" class="warn" title="Reboot kiosk">↻ Reboot</button><button data-action="system/shutdown" data-confirm="Shut down this kiosk?" class="danger" title="Shut down kiosk">⏻ Shutdown</button></div>
+      </header>
+
+      <main>
+        <section class="card auth" id="authCard">
+          <h2>Connect</h2>
+          <p>Enter the API token from <code>/etc/kioskctl/config.yaml</code>.</p>
+          <div class="row"><input id="token" type="password" placeholder="API token" autocomplete="current-password" /><button id="saveToken">Connect</button></div>
+        </section>
+
+        <div id="dashboard" class="hidden">
+          <section class="view active" data-view="dashboard">
+            <section class="card screen-card" id="remoteScreenCard">
+              <div class="section-head">
+                <div><h2>Remote screen</h2><p id="currentUrl" class="url-preview">—</p></div>
+                <button class="secondary" id="refreshShot">Refresh screenshot</button>
+              </div>
+              <div class="screen-wrap"><img id="screen" alt="Kiosk screenshot" title="Click to control the kiosk" /></div>
+              <div class="screen-meta"><span id="viewportInfo">Viewport: —</span><span id="focusInfo">Focus: —</span></div>
+              <p class="screen-help">Click the screenshot to control the kiosk. Remote coordinates automatically follow the browser viewport.</p>
+              <div class="row remote-input"><input id="remoteText" type="text" placeholder="Type text into focused kiosk field" /><button id="sendText">Send text</button><button class="secondary keybtn" data-key="Enter">Enter</button><button class="secondary keybtn" data-key="Tab">Tab</button><button class="secondary keybtn" data-key="Escape">Esc</button><button class="secondary keybtn" data-key="Backspace">Backspace</button></div>
+            </section>
+
+            <section class="card">
+              <div class="section-head"><div><h2>Quick controls</h2><p>Everyday controls stay here; one-time setup lives under Settings.</p></div></div>
+              <div class="row browser-row"><input id="url" type="url" placeholder="https://example.com" /><button id="go">Set home & go</button></div>
+              <div class="row page-row"><select id="pageSelect"><option value="">Configured pages</option></select><button id="openPage" class="secondary">Open page</button></div>
+              <div class="actions quick-actions">
+                <button data-action="browser/back">Back</button><button data-action="browser/reload">Reload</button>
+                <button data-action="display/on">Screen on</button><button data-action="display/off" class="secondary">Screen off</button>
+              </div>
+              <div class="two-col compact-controls">
+                <div><label class="range-label">Brightness <span id="brightnessLabel">—</span></label><input id="brightness" type="range" min="1" max="100" value="70" /></div>
+                <div><label class="range-label">Volume <span id="volumeLabel">—</span></label><input id="volume" type="range" min="0" max="100" value="40" /></div>
+              </div>
+            </section>
+          </section>
+
+          <section class="view" data-view="settings">
+            <div class="settings-tabs" role="tablist" aria-label="Settings sections">
+              <button class="settings-tab active" type="button" data-settings-target="browser">Browser</button>
+              <button class="settings-tab" type="button" data-settings-target="display">Display &amp; Input</button>
+              <button class="settings-tab" type="button" data-settings-target="plugins">Plugins</button>
+            </div>
+
+            <div class="settings-pane active" data-settings-pane="browser">
+              <section class="card">
+                <div class="section-head"><div><h2>Browser setup</h2><p>Normally configured once, then left alone.</p></div></div>
+                <div class="actions">
+                  <button data-action="browser/restart">Restart browser</button>
+                  <button data-action="kiosk/enable" id="enableKiosk">Enable kiosk</button>
+                  <button data-action="kiosk/disable" id="disableKiosk" class="secondary" data-confirm="Disable kiosk mode and restore the console?">Disable kiosk</button>
+                </div>
+                <p id="providerInfo" class="screen-help">—</p>
+                <details class="settings-details" open>
+                  <summary>Touch &amp; browser experience</summary>
+                  <div class="form-grid">
+                    <label>Browser zoom<select id="browserZoom"><option value="0.5">50%</option><option value="0.75">75%</option><option value="0.9">90%</option><option value="1">100%</option><option value="1.1">110%</option><option value="1.25">125%</option><option value="1.5">150%</option><option value="2">200%</option></select></label>
+                    <label>Kiosk page theme<select id="browserColorScheme"><option value="auto">Auto / system</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
+                    <label>Pull refresh distance<input id="pullThreshold" type="number" min="60" max="240" step="5" value="110" /></label>
+                  </div>
+                  <div class="actions theme-actions"><button id="applyBrowserTheme" class="secondary" type="button">Apply page theme &amp; restart</button><span id="browserThemeStatus" class="screen-help"></span></div>
+                  <div class="toggle-grid">
+                    <label><input type="checkbox" id="pullToRefresh" checked /> Pull down to refresh</label>
+                    <label><input type="checkbox" id="edgeDrawer" /> Kiosk edge-control drawer</label>
+                    <label><input type="checkbox" id="onscreenKeyboard" /> On-screen keyboard</label>
+                  </div>
+                  <label class="stack-label">Configured pages <span>One per line: <code>Name | https://url</code></span><textarea id="browserPages" rows="5" placeholder="Home Assistant | https://homeassistant.local/
+Cameras | https://homeassistant.local/cameras"></textarea></label>
+                  <button id="saveBrowserExperience">Apply browser experience &amp; restart</button>
+                  <p id="browserExperienceStatus" class="save-status" aria-live="polite"></p>
+                  <p class="screen-help">Pull down from the top edge of the physical kiosk page to refresh. Edge controls and the keyboard are optional overlays.</p>
+                </details>
+                <details class="settings-details">
+                  <summary>Prompt suppression</summary>
+                  <div class="toggle-grid">
+                    <label><input type="checkbox" id="disablePasswords" /> Disable password/save prompts</label>
+                    <label><input type="checkbox" id="blockNotifications" /> Block notification prompts</label>
+                    <label><input type="checkbox" id="disableAutofill" /> Disable autofill</label>
+                    <label><input type="checkbox" id="disableTranslate" /> Disable translation prompts</label>
+                  </div>
+                  <button id="savePrompts">Apply browser settings &amp; restart</button>
+                </details>
+              </section>
+            </div>
+
+            <div class="settings-pane" data-settings-pane="display">
+              <section class="two-col">
+                <div class="card">
+                  <div class="section-head"><div><h2>Display setup</h2><p>Resolution, refresh, rotation and scale.</p></div></div>
+                  <div class="actions"><button id="reinitDisplay" class="secondary">Reinitialize display</button></div>
+                  <div class="form-grid">
+                    <label>Output<select id="displayOutput"><option value="auto">Auto</option></select></label>
+                    <label>Mode<select id="displayMode"><option value="preferred">Preferred</option></select></label>
+                    <label>Refresh<select id="displayRefresh"><option value="auto">Auto</option></select></label>
+                    <label>Rotation<select id="displayTransform"><option value="normal">Normal</option><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option></select></label>
+                    <label>Scale<select id="displayScale"><option value="1">100%</option><option value="1.25">125%</option><option value="1.5">150%</option><option value="1.75">175%</option><option value="2">200%</option></select></label>
+                  </div>
+                  <label class="setup-toggle"><input type="checkbox" id="rotateTouch" checked /> Rotate physical touchscreen coordinates with the display</label>
+                  <label class="setup-toggle"><input type="checkbox" id="ignoreTouchMouse" checked /> Ignore touchscreen-emulated mouse pointer (recommended for touch kiosks)</label>
+                  <p class="screen-help">This disables only compatibility mouse nodes paired with a touchscreen; real mice and touchpads remain available.</p>
+                  <label class="setup-toggle"><input type="checkbox" id="disableTouchpad" /> Disable touchpad while kiosk mode is active</label>
+                  <p class="screen-help">Useful on touch-first laptops when the built-in trackpad keeps the Wayland cursor visible. The touchpad is restored when kiosk mode is disabled.</p>
+                  <button id="applyDisplay">Apply display &amp; input configuration</button>
+                  <p id="displayInfo" class="screen-help">—</p><p id="geometryInfo" class="screen-help">Geometry: —</p>
+                  <p id="touchInfo" class="screen-help">Touch mapping: —</p>
+                  <p id="touchPointerInfo" class="screen-help">Touch pointer suppression: —</p>
+                  <p id="touchpadInfo" class="screen-help">Touchpad suppression: —</p>
+                </div>
+                <div class="card">
+                  <h2>Hardware</h2>
+                  <p id="audioInfo" class="screen-help">Audio provider: —</p>
+                  <h3>Temperature</h3><p id="tempInfo" class="screen-help">Sensor: —</p>
+                  <h3>Input devices</h3><div id="inputInfo" class="device-list">—</div>
+                </div>
+              </section>
+              <section class="card">
+                <div class="section-head"><div><h2>Idle &amp; wake</h2><p>Dim or turn off the display after inactivity, then wake it from local touch/keyboard/mouse input.</p></div><span id="idleBadge" class="status-badge">—</span></div>
+                <label class="setup-toggle"><input type="checkbox" id="idleEnabled" /> Enable idle display policy</label>
+                <div class="form-grid">
+                  <label>Dim after (seconds)<input id="idleDimAfter" type="number" min="0" step="30" value="300" /></label>
+                  <label>Screen off after (seconds)<input id="idleOffAfter" type="number" min="0" step="30" value="600" /></label>
+                  <label>Dim brightness (%)<input id="idleDimBrightness" type="number" min="1" max="100" value="20" /></label>
+                </div>
+                <label class="setup-toggle"><input type="checkbox" id="idleWakeOnInput" checked /> Wake on local touch / keyboard / mouse activity</label>
+                <button id="saveIdle">Save idle &amp; wake settings</button>
+                <p id="idleSaveStatus" class="save-status" aria-live="polite"></p>
+                <p id="idleInfo" class="screen-help">Idle state: —</p>
+              </section>
+              <section class="card">
+                <div class="section-head"><div><h2>Simple screensaver</h2><p>Basic local slideshow for kiosks that do not need signage scheduling or an external photo service. Advanced signage and Immich live under Plugins.</p></div><span id="screensaverBadge" class="status-badge">—</span></div>
+                <label class="setup-toggle"><input type="checkbox" id="screensaverEnabled" /> Enable simple slideshow screensaver</label>
+                <div class="form-grid">
+                  <label>Start after (seconds)<input id="screensaverAfter" type="number" min="5" step="5" value="120" /></label>
+                  <label>Slide interval (seconds)<input id="screensaverInterval" type="number" min="2" max="3600" value="10" /></label>
+                  <label>Image fit<select id="screensaverFit"><option value="contain">Contain</option><option value="cover">Cover / fill screen</option></select></label>
+                  <label>Background<input id="screensaverBackground" type="color" value="#000000" /></label>
+                </div>
+                <label class="setup-toggle"><input type="checkbox" id="screensaverShuffle" /> Shuffle image order</label>
+                <label class="setup-toggle"><input type="checkbox" id="screensaverKeepDisplayOn" checked /> Keep display awake while slideshow is active</label>
+                <p class="screen-help">When enabled, the simple slideshow takes priority over dim/screen-off timers so the images remain visible.</p>
+                <div class="row screensaver-upload-row"><input id="screensaverFiles" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple /><button id="uploadScreensaverImages" type="button">Upload images</button></div>
+                <p id="screensaverUploadStatus" class="save-status" aria-live="polite"></p>
+                <div id="screensaverImages" class="asset-list">No slideshow images uploaded.</div>
+                <div class="actions"><button id="saveScreensaver">Save screensaver settings</button><button id="previewScreensaver" class="secondary" type="button">Preview</button><button id="stopScreensaver" class="secondary" type="button">Return to kiosk</button></div>
+                <p id="screensaverSaveStatus" class="save-status" aria-live="polite"></p>
+              </section>
+            </div>
+
+            <div class="settings-pane" data-settings-pane="plugins">
+              <section class="card">
+                <div class="section-head"><div><h2>Plugin catalog</h2><p>Official optional plugins ship with kioskctl and can be installed or removed from this page. The same catalog interface will support signed external packages later.</p></div><span class="status-badge">v0.5</span></div>
+                <div class="plugin-grid" id="pluginCatalog">
+                  <article class="plugin-card" data-plugin-card="digital_signage">
+                    <div class="plugin-card-head"><div><h3>Digital Signage</h3><p>Scheduled local ads, announcements and rotating company images.</p></div><span id="signageCatalogBadge" class="status-badge">AVAILABLE</span></div>
+                    <p class="plugin-capabilities">screensaver • local assets • schedules</p>
+                    <div class="actions"><button id="installSignage" type="button">Install</button><button id="removeSignage" type="button" class="danger hidden">Remove</button></div>
+                  </article>
+                  <article class="plugin-card" data-plugin-card="immich">
+                    <div class="plugin-card-head"><div><h3>Immich Screensaver</h3><p>Show photos from an Immich server or a specific Immich album.</p></div><span id="immichCatalogBadge" class="status-badge">AVAILABLE</span></div>
+                    <p class="plugin-capabilities">screensaver • Immich API • album/random photos</p>
+                    <div class="actions"><button id="installImmich" type="button">Install</button><button id="removeImmich" type="button" class="danger hidden">Remove</button></div>
+                  </article>
+                </div>
+              </section>
+              <section class="two-col">
+              <div class="card">
+                <div class="section-head"><div><h2>MQTT transport</h2><p>Generic broker connection used by plugins and direct MQTT control.</p></div><span id="mqttBadge" class="status-badge">—</span></div>
+                <label class="setup-toggle"><input type="checkbox" id="mqttEnabled" /> Enable MQTT</label>
+                <div class="form-grid">
+                  <label>Broker host<input id="mqttHost" type="text" placeholder="192.168.1.10" /></label>
+                  <label>Port<input id="mqttPort" type="number" min="1" max="65535" value="1883" /></label>
+                  <label>Username<input id="mqttUsername" type="text" autocomplete="username" /></label>
+                  <label>Password<input id="mqttPassword" type="password" placeholder="Leave blank to keep stored password" autocomplete="new-password" /></label>
+                  <label>Base topic<input id="mqttBaseTopic" type="text" value="kioskctl" /></label>
+                </div>
+                <button id="saveMqtt">Save &amp; reconnect</button>
+                <p id="mqttSaveStatus" class="save-status" aria-live="polite"></p>
+                <p id="mqttInfo" class="screen-help">MQTT status: —</p>
+              </div>
+              <div class="card">
+                <div class="section-head"><div><h2>Home Assistant</h2><p>Official plugin using Home Assistant MQTT discovery.</p></div><span id="haBadge" class="status-badge">—</span></div>
+                <label class="setup-toggle"><input type="checkbox" id="haEnabled" /> Enable Home Assistant plugin</label>
+                <div class="form-grid one-col"><label>Discovery prefix<input id="haDiscoveryPrefix" type="text" value="homeassistant" /></label></div>
+                <div class="actions"><button id="saveHa">Save plugin settings</button><button id="republishHa" class="secondary">Republish discovery</button></div>
+                <p id="haSaveStatus" class="save-status" aria-live="polite"></p>
+                <p id="haInfo" class="screen-help">Plugin status: —</p>
+                <p id="haManifest" class="screen-help">Capabilities: —</p>
+                <p class="screen-help">The plugin republishes discovery when Home Assistant publishes its <code>homeassistant/status</code> birth message.</p>
+              </div>
+              </section>
+
+              <section id="digitalSignageConfig" class="card hidden">
+                <div class="section-head"><div><h2>Digital Signage</h2><p>Advanced local signage. When enabled, it becomes the kiosk idle-content provider instead of the Simple screensaver.</p></div><span id="signageBadge" class="status-badge">—</span></div>
+                <label class="setup-toggle"><input type="checkbox" id="signageEnabled" /> Enable Digital Signage as the idle screensaver</label>
+                <div class="form-grid">
+                  <label>Start after (seconds)<input id="signageAfter" type="number" min="5" step="5" value="120" /></label>
+                  <label>Slide interval (seconds)<input id="signageInterval" type="number" min="2" max="3600" value="10" /></label>
+                  <label>Image fit<select id="signageFit"><option value="cover">Cover / fill screen</option><option value="contain">Contain</option></select></label>
+                  <label>Background<input id="signageBackground" type="color" value="#000000" /></label>
+                </div>
+                <div class="toggle-grid">
+                  <label><input type="checkbox" id="signageShuffle" /> Shuffle image order</label>
+                  <label><input type="checkbox" id="signageKeepDisplayOn" checked /> Keep display awake</label>
+                  <label><input type="checkbox" id="signageScheduleEnabled" /> Restrict signage to a schedule</label>
+                </div>
+                <div class="form-grid">
+                  <label>Schedule start<input id="signageScheduleStart" type="time" value="00:00" /></label>
+                  <label>Schedule end<input id="signageScheduleEnd" type="time" value="23:59" /></label>
+                </div>
+                <div class="weekday-grid" id="signageDays">
+                  <label><input type="checkbox" value="0" checked /> Mon</label><label><input type="checkbox" value="1" checked /> Tue</label><label><input type="checkbox" value="2" checked /> Wed</label><label><input type="checkbox" value="3" checked /> Thu</label><label><input type="checkbox" value="4" checked /> Fri</label><label><input type="checkbox" value="5" checked /> Sat</label><label><input type="checkbox" value="6" checked /> Sun</label>
+                </div>
+                <div class="row screensaver-upload-row"><input id="signageFiles" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple /><button id="uploadSignageImages" type="button">Upload images</button></div>
+                <p id="signageUploadStatus" class="save-status" aria-live="polite"></p>
+                <div id="signageImages" class="asset-list">No signage images uploaded.</div>
+                <div class="actions"><button id="saveSignage">Save signage settings</button><button id="previewSignage" class="secondary" type="button">Preview</button><button id="stopPluginScreensaver" class="secondary" type="button">Return to kiosk</button></div>
+                <p id="signageSaveStatus" class="save-status" aria-live="polite"></p>
+              </section>
+
+              <section id="immichConfig" class="card hidden">
+                <div class="section-head"><div><h2>Immich Screensaver</h2><p>Use an Immich library as the idle photo source. API keys remain on the kiosk and are never sent to the browser page.</p></div><span id="immichBadge" class="status-badge">—</span></div>
+                <label class="setup-toggle"><input type="checkbox" id="immichEnabled" /> Enable Immich as the idle screensaver</label>
+                <div class="form-grid">
+                  <label>Immich server URL<input id="immichServerUrl" type="url" placeholder="http://immich.local:2283" /></label>
+                  <label>API key<input id="immichApiKey" type="password" placeholder="Leave blank to keep stored key" autocomplete="new-password" /></label>
+                  <label>Album ID <span>optional; blank uses random photos</span><input id="immichAlbumId" type="text" /></label>
+                  <label>Start after (seconds)<input id="immichAfter" type="number" min="5" step="5" value="120" /></label>
+                  <label>Slide interval (seconds)<input id="immichInterval" type="number" min="2" max="3600" value="15" /></label>
+                  <label>Image fit<select id="immichFit"><option value="contain">Contain</option><option value="cover">Cover / fill screen</option></select></label>
+                  <label>Background<input id="immichBackground" type="color" value="#000000" /></label>
+                  <label>Random photo pool<input id="immichRandomCount" type="number" min="1" max="500" value="100" /></label>
+                </div>
+                <label class="setup-toggle"><input type="checkbox" id="immichKeepDisplayOn" checked /> Keep display awake while Immich is active</label>
+                <div class="actions"><button id="saveImmich">Save Immich settings</button><button id="testImmich" class="secondary" type="button">Test connection</button><button id="previewImmich" class="secondary" type="button">Preview</button></div>
+                <p id="immichSaveStatus" class="save-status" aria-live="polite"></p>
+                <p id="immichInfo" class="screen-help">Immich status: —</p>
+              </section>
+            </div>
+          </section>
+
+          <section class="view" data-view="system">
+            <section class="card log-card"><h2>Activity</h2><pre id="log">Ready.</pre></section>
+            <section class="grid stats system-stats" id="systemStats"></section>
+            <section class="card">
+              <div class="section-head"><div><h2>Dashboard indicator thresholds</h2><p>Set a threshold to 0 to disable that light. A light turns red when the live value reaches or exceeds its threshold.</p></div></div>
+              <div class="form-grid threshold-grid">
+                <label>CPU (%)<input id="cpuThreshold" type="number" min="0" max="100" value="90" /></label>
+                <label>Memory (%)<input id="memoryThreshold" type="number" min="0" max="100" value="90" /></label>
+                <label>Disk (%)<input id="diskThreshold" type="number" min="0" max="100" value="90" /></label>
+                <label>CPU temperature (°C)<input id="temperatureThreshold" type="number" min="0" max="150" value="80" /></label>
+              </div>
+              <button id="saveThresholds">Save dashboard thresholds</button>
+              <p id="thresholdSaveStatus" class="save-status" aria-live="polite"></p>
+            </section>
+            <section class="card diagnostics-card">
+              <div class="section-head"><div><h2>Diagnostics</h2><p>Cross-distro provider, session, display and hardware checks.</p></div><button class="secondary" id="refreshDiagnostics">Refresh</button></div>
+              <div id="diagSummary" class="diag-summary"></div>
+              <pre id="diagnostics">Run diagnostics to inspect this device.</pre>
+            </section>
+            <section class="card danger-zone"><h2>System</h2><p class="screen-help">Administrative actions you should rarely need after setup.</p><div class="actions"><button data-action="system/reboot" data-confirm="Reboot this kiosk?" class="warn">Reboot</button><button data-action="system/shutdown" data-confirm="Shut down this kiosk?" class="danger">Shutdown</button><button data-action="system/update" data-confirm="Run the configured update command?" class="secondary">Update</button></div></section>
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
+  <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+  <script src="/static/app.js?v=0.6.0-wip5"></script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+[Unit]
+Description=kioskctl management agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+Group=kioskctl
+ExecStart=/usr/local/bin/kioskctl --config /etc/kioskctl/config.yaml serve
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+RuntimeDirectory=kioskctl
+RuntimeDirectoryMode=0750
+ReadWritePaths=/etc/kioskctl /var/lib/kioskctl /run/kioskctl
+
+[Install]
+WantedBy=multi-user.target
