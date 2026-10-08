@@ -11,3 +11,11 @@ dist/
 target/
 dist/
 *.backup-*
+Cargo.lock
+*.swp
+*.swo
+*~
+*.orig
+*.rej
+.idea/
+command
