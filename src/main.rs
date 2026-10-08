@@ -1,14 +1,14 @@
 use anyhow::{Context, Result};
 use axum::{
+    Json, Router,
     extract::{Path as AxPath, Request, State},
-    http::{header, HeaderMap, StatusCode},
+    http::{HeaderMap, StatusCode, header},
     response::{IntoResponse, Response},
     routing::{get, post},
-    Json, Router,
 };
 use clap::{Parser, Subcommand};
-use kioskctl::{browser, config, hardware, plugin, state::AppState, system, VERSION};
-use serde_json::{json, Value};
+use kioskctl::{VERSION, browser, config, hardware, plugin, state::AppState, system};
+use serde_json::{Value, json};
 use std::{
     fs,
     path::{Path, PathBuf},
@@ -236,7 +236,7 @@ async fn browser_url(
                 StatusCode::BAD_REQUEST,
                 Json(json!({"detail":"url is required"})),
             )
-                .into_response()
+                .into_response();
         }
     };
     let mut c = s.config.write().await;
@@ -697,6 +697,15 @@ async fn generic_post(
             )
                 .into_response();
         }
+    }
+    let snapshot = c.clone();
+    drop(c);
+    if path == "display/config" {
+        return match hardware::apply_display_config(&snapshot).await {
+            Ok(outputs) => Json(json!({"ok":true,"path":path,"applied":true,"outputs":outputs}))
+                .into_response(),
+            Err(e) => bad(e),
+        };
     }
     Json(json!({"ok":true,"path":path})).into_response()
 }

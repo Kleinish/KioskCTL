@@ -1,5 +1,5 @@
-use anyhow::{bail, Context, Result};
-use serde_json::{json, Value};
+use anyhow::{Context, Result, bail};
+use serde_json::{Value, json};
 use std::{
     fs,
     io::Write,
@@ -114,6 +114,13 @@ pub fn validate(c: &Value) -> Result<()> {
         .unwrap_or("");
     if bg.len() != 7 || !bg.starts_with('#') || !bg[1..].chars().all(|x| x.is_ascii_hexdigit()) {
         bail!("screensaver.background must be #RRGGBB")
+    }
+    let transform = c
+        .pointer("/display/transform")
+        .and_then(Value::as_str)
+        .unwrap_or("normal");
+    if !["normal", "90", "180", "270"].contains(&transform) {
+        bail!("display.transform must be normal, 90, 180, or 270")
     }
     let command = c
         .pointer("/launcher/command")

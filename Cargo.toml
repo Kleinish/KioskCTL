@@ -1,6 +1,6 @@
 [package]
 name = "kioskctl"
-version = "0.6.19"
+version = "0.6.20"
 edition = "2024"
 license = "MIT"
 description = "Linux kiosk controller with browser, display, MQTT, and plugin management"

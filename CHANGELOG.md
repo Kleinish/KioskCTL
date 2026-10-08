@@ -4,6 +4,7 @@
 
 - Added `launcher` configuration for running a native/local graphical application in the kiosk session instead of Chromium.
 - Removed an unused `uuid` dependency so Rust 1.88 builds do not resolve a newer unsupported release.
+- Applied saved display transform and scale through `wlr-randr` when using the Display & Input settings.
 
 ## 0.6.0 — release candidate worktree
 

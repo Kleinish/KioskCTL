@@ -1,5 +1,5 @@
-use anyhow::{bail, Context, Result};
-use serde_json::{json, Value};
+use anyhow::{Context, Result, bail};
+use serde_json::{Value, json};
 use std::{fs, path::Path, process::Stdio};
 use tokio::process::Command;
 
@@ -256,6 +256,39 @@ pub async fn display_diagnostics(c: &Value) -> Value {
             json!({"runtime_dir":dir,"wayland_display":wayland,"source":"unavailable","outputs":[],"error":e.to_string()})
         }
     }
+}
+pub async fn apply_display_config(c: &Value) -> Result<Vec<String>> {
+    let transform = c
+        .pointer("/display/transform")
+        .and_then(Value::as_str)
+        .unwrap_or("normal");
+    if !["normal", "90", "180", "270"].contains(&transform) {
+        bail!("display.transform must be normal, 90, 180, or 270")
+    }
+    let scale = c
+        .pointer("/display/scale")
+        .and_then(Value::as_f64)
+        .unwrap_or(1.0);
+    if !(0.5..=3.0).contains(&scale) {
+        bail!("display.scale must be between 0.5 and 3.0")
+    }
+    let outputs = outputs(c).await?;
+    for output in &outputs {
+        user_command(
+            c,
+            "wlr-randr",
+            &vec![
+                "--output".into(),
+                output.clone(),
+                "--transform".into(),
+                transform.into(),
+                "--scale".into(),
+                scale.to_string(),
+            ],
+        )
+        .await?;
+    }
+    Ok(outputs)
 }
 pub async fn display_power(c: &Value, on: bool) -> Result<Vec<String>> {
     let outputs = outputs(c).await?;
