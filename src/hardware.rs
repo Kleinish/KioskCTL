@@ -34,19 +34,28 @@ pub async fn runtime_dir(c: &Value) -> String {
         candidates.push(format!("/run/user/{id}"))
     }
     candidates.extend(["/run/kioskctl-user".into(), "/run/kioskctl".into()]);
+    // A D-Bus socket alone does not prove this is the Cage session.  Fedora
+    // may create /run/user/<uid>/bus for the service account even though Cage
+    // owns its Wayland socket in /run/kioskctl-user.  Prefer a live Wayland
+    // socket so control commands target the actual kiosk compositor.
     candidates
-        .into_iter()
+        .iter()
         .find(|d| {
-            Path::new(d).join("bus").exists()
-                || fs::read_dir(d)
-                    .ok()
-                    .map(|r| {
-                        r.flatten().any(|e| {
-                            e.file_name().to_string_lossy().starts_with("wayland-")
-                                && !e.file_name().to_string_lossy().ends_with(".lock")
-                        })
+            fs::read_dir(d)
+                .ok()
+                .map(|r| {
+                    r.flatten().any(|e| {
+                        e.file_name().to_string_lossy().starts_with("wayland-")
+                            && !e.file_name().to_string_lossy().ends_with(".lock")
                     })
-                    .unwrap_or(false)
+                })
+                .unwrap_or(false)
+        })
+        .cloned()
+        .or_else(|| {
+            candidates
+                .into_iter()
+                .find(|d| Path::new(d).join("bus").exists())
         })
         .unwrap_or_else(|| "/run/kioskctl-user".into())
 }

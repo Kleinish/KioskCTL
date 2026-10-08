@@ -13,6 +13,7 @@ use std::{
     fs,
     path::{Path, PathBuf},
     sync::Arc,
+    time::Duration,
 };
 use subtle::ConstantTimeEq;
 use tower_http::{services::ServeDir, trace::TraceLayer};
@@ -86,7 +87,59 @@ async fn main() -> Result<()> {
 }
 
 async fn browser_session(c: &Value) -> Result<()> {
+    let display_config = c.clone();
+    tokio::spawn(async move {
+        restore_display_config(&display_config).await;
+    });
     browser::run(c).await
+}
+
+/// Cage can finish its own output initialization after the first client maps.
+/// Reapply the persisted configuration through the settling period so it wins
+/// that race without delaying kiosk application startup.
+async fn restore_display_config(c: &Value) {
+    if !c
+        .pointer("/display/reinitialize_on_start")
+        .and_then(Value::as_bool)
+        .unwrap_or(true)
+    {
+        return;
+    }
+
+    let timeout = c
+        .pointer("/display/settle_timeout")
+        .and_then(Value::as_f64)
+        .unwrap_or(12.0)
+        .max(0.0);
+    let delay = c
+        .pointer("/display/settle_delay")
+        .and_then(Value::as_f64)
+        .unwrap_or(1.0)
+        .clamp(0.1, 5.0);
+    let deadline = tokio::time::Instant::now() + Duration::from_secs_f64(timeout);
+    let pause = Duration::from_secs_f64(delay);
+    let mut applied = false;
+
+    // Do not run before Cage has had a chance to create its socket.
+    tokio::time::sleep(pause).await;
+    loop {
+        match hardware::apply_display_config(c).await {
+            Ok(outputs) => {
+                if !applied {
+                    tracing::info!(?outputs, "restoring display configuration");
+                }
+                applied = true;
+            }
+            Err(error) => tracing::debug!(%error, "display is not ready yet"),
+        }
+        if tokio::time::Instant::now() >= deadline {
+            break;
+        }
+        tokio::time::sleep(pause).await;
+    }
+    if !applied {
+        tracing::warn!("could not restore display configuration during startup");
+    }
 }
 
 async fn serve(cfg: Value, path: PathBuf) -> Result<()> {
