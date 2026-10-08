@@ -72,8 +72,7 @@ fn display(c: &Value, dir: &str) -> String {
         .and_then(|r| {
             r.flatten()
                 .map(|e| e.file_name().to_string_lossy().into_owned())
-                .filter(|n| n.starts_with("wayland-") && !n.ends_with(".lock"))
-                .next()
+                .find(|n| n.starts_with("wayland-") && !n.ends_with(".lock"))
         })
         .unwrap_or_else(|| "wayland-0".into())
 }
@@ -286,7 +285,7 @@ pub async fn apply_display_config(c: &Value) -> Result<Vec<String>> {
         user_command(
             c,
             "wlr-randr",
-            &vec![
+            &[
                 "--output".into(),
                 output.clone(),
                 "--transform".into(),
@@ -305,7 +304,7 @@ pub async fn display_power(c: &Value, on: bool) -> Result<Vec<String>> {
         user_command(
             c,
             "wlr-randr",
-            &vec![
+            &[
                 "--output".into(),
                 output.clone(),
                 if on { "--on".into() } else { "--off".into() },

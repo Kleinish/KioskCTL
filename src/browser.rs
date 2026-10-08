@@ -111,9 +111,7 @@ async fn call(c: &Value, method: &str, params: Value) -> Result<Value> {
         .context("connect to Chromium DevTools")?;
     let (mut sink, mut stream) = socket.split();
     sink.send(Message::Text(
-        json!({"id":1,"method":method,"params":params})
-            .to_string()
-            .into(),
+        json!({"id":1,"method":method,"params":params}).to_string(),
     ))
     .await?;
     while let Some(message) = timeout(Duration::from_secs(5), stream.next())
